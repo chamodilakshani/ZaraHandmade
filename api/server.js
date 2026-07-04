@@ -48,7 +48,16 @@ const ProductSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   image: { type: String, default: '' },
   desc: { type: String, default: '' },
-  category: { type: String, default: 'Bouquet' }
+  category: {
+    type: String,
+    enum: ['Flower Bouquet', 'Gift Box'],
+    default: 'Flower Bouquet'
+  },
+  productType: {
+    type: String,
+    enum: ['', 'Handmade', 'Fresh Flowers'],
+    default: ''
+  }
 }, { timestamps: true });
 const Product = mongoose.model('Product', ProductSchema);
 
@@ -128,7 +137,10 @@ app.post('/api/auth/login', async (req, res) => {
 // Products
 app.get('/api/products', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const query = {};
+    if (req.query.category) query.category = req.query.category;
+    if (req.query.productType) query.productType = req.query.productType;
+    const products = await Product.find(query).sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -137,7 +149,15 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/products', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const product = new Product(req.body);
+    const category = req.body.category || 'Flower Bouquet';
+    const product = new Product({
+      name: req.body.name,
+      price: req.body.price,
+      image: req.body.image || '',
+      desc: req.body.desc || '',
+      category,
+      productType: category === 'Gift Box' ? '' : (req.body.productType || 'Handmade')
+    });
     await product.save();
     res.status(201).json(product);
   } catch (err) {
