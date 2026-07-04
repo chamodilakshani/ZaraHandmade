@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../api';
+import logoIcon from '../assets/logo-icon.svg';
 
 export default function AuthForm({ onAuthSuccess }) {
   const [isRegister, setIsRegister] = useState(false);
@@ -35,7 +36,8 @@ export default function AuthForm({ onAuthSuccess }) {
     <div className="auth-wrap">
       <form onSubmit={handleSubmit} className="card auth-card">
         <div className="eyebrow">Welcome</div>
-        <h2 style={{ margin: '6px 0 22px' }}>🌸 {isRegister ? 'Create an account' : 'Sign in to Zara'}</h2>
+        <img src={logoIcon} alt="" style={{ width: 40, height: 40, margin: '10px 0' }} />
+        <h2 style={{ margin: '0 0 22px' }}>{isRegister ? 'Create an account' : 'Sign in to Zara'}</h2>
         <input
           type="text" placeholder="Username" required
           value={username} onChange={(e) => setUsername(e.target.value)}
