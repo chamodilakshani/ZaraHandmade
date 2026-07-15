@@ -9,6 +9,7 @@ import CustomBouquet from './components/CustomBouquet';
 import MyOrders from './components/MyOrders';
 import AdminOrders from './components/AdminOrders';
 import AdminProducts from './components/AdminProducts';
+import GreetingCard from './components/GreetingCard';
 import { CheckIcon, FlowerIcon, SparkleIcon } from './components/Icons';
 
 const collections = [
@@ -62,6 +63,7 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [greetingCard, setGreetingCard] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -126,9 +128,11 @@ const loadProducts = async () => {
       await api.placeOrder({
         type: 'shop',
         items: cart.map(({ name, price, qty, image }) => ({ name, price, qty, image })),
+        greetingCard,
         total
       });
       setCart([]);
+      setGreetingCard(null);
       setCartOpen(false);
       alert('Order placed!');
       loadOrders();
@@ -353,6 +357,13 @@ const loadProducts = async () => {
         <CustomBouquet onOrderPlaced={loadOrders} />
       )}
 
+      {view === 'greeting-card' && user.role === 'customer' && (
+        <GreetingCard
+          greetingCard={greetingCard}
+          onAddToGift={(card) => { setGreetingCard(card); setCartOpen(true); }}
+        />
+      )}
+
       {view === 'orders' && user.role === 'customer' && (
         <MyOrders orders={orders} />
       )}
@@ -374,6 +385,8 @@ const loadProducts = async () => {
       {cartOpen && (
         <CartDrawer
           cart={cart}
+          greetingCard={greetingCard}
+          onRemoveGreetingCard={() => setGreetingCard(null)}
           onClose={() => setCartOpen(false)}
           onUpdateQty={updateQty}
           onRemove={removeFromCart}

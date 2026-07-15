@@ -2,7 +2,7 @@ import React from 'react';
 import { BagIcon, CloseIcon, TrashIcon } from './Icons';
 import ImagePlaceholder from './ImagePlaceholder';
 
-export default function CartDrawer({ cart, onClose, onUpdateQty, onRemove, onCheckout, checkingOut }) {
+export default function CartDrawer({ cart, greetingCard, onClose, onUpdateQty, onRemove, onRemoveGreetingCard, onCheckout, checkingOut }) {
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   return (
@@ -43,6 +43,12 @@ export default function CartDrawer({ cart, onClose, onUpdateQty, onRemove, onChe
                 </div>
               </div>
             ))
+          )}
+          {greetingCard && (
+            <div className="cart-greeting-card">
+              <div><span>💌</span><div><strong>Digital greeting card</strong><small>{greetingCard.heading} · {greetingCard.recipient}</small></div></div>
+              <button onClick={onRemoveGreetingCard} aria-label="Remove greeting card">×</button>
+            </div>
           )}
         </div>
         {cart.length > 0 && (

@@ -76,6 +76,11 @@ const OrderSchema = new mongoose.Schema({
     wrapColor: String,
     notes: String
   },
+  greetingCard: {
+    heading: String,
+    recipient: String,
+    signature: String
+  },
   total: { type: Number, required: true },
   status: { type: String, enum: ['Processing', 'Completed'], default: 'Processing' },
   date: { type: Date, default: Date.now }
@@ -177,13 +182,14 @@ app.delete('/api/products/:id', verifyToken, requireAdmin, async (req, res) => {
 // Orders
 app.post('/api/orders', verifyToken, async (req, res) => {
   try {
-    const { items, type, customDetails, total } = req.body;
+    const { items, type, customDetails, greetingCard, total } = req.body;
     const order = new Order({
       userId: req.user.id,
       username: req.user.username,
       items: items || [],
       type: type || 'shop',
       customDetails: customDetails || {},
+      greetingCard: greetingCard || {},
       total
     });
     await order.save();

@@ -40,6 +40,7 @@ export default function Navbar({ user, view, setView, cartCount, onCartClick, on
             <NavBtn target="shop" label="Home" />
             <NavBtn target="products" label="Products" />
             <NavBtn target="custom" label="Custom Bouquet" />
+            <NavBtn target="greeting-card" label="Greeting Card" />
             <NavBtn target="orders" label="My Orders" />
           </>
         )}
