@@ -87,6 +87,21 @@ const OrderSchema = new mongoose.Schema({
 });
 const Order = mongoose.model('Order', OrderSchema);
 
+// Testimonials — submitted by customers, shown on the Home page
+const TestimonialSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  username: { type: String, required: true },
+  rating: { type: Number, min: 1, max: 5, default: 5 },
+  quote: { type: String, required: true, trim: true, maxlength: 500 }
+}, { timestamps: true });
+const Testimonial = mongoose.model('Testimonial', TestimonialSchema);
+
+// Newsletter subscribers — collected from the "Zara notes" signup
+const SubscriberSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true }
+}, { timestamps: true });
+const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
+
 // ---- AUTH MIDDLEWARE ----
 function verifyToken(req, res, next) {
   const header = req.headers.authorization;
@@ -216,6 +231,70 @@ app.patch('/api/orders/:id/complete', verifyToken, requireAdmin, async (req, res
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+// Testimonials
+app.get('/api/testimonials', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 12, 50);
+    const testimonials = await Testimonial.find().sort({ createdAt: -1 }).limit(limit);
+    res.json(testimonials);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch testimonials' });
+  }
+});
+
+app.post('/api/testimonials', verifyToken, async (req, res) => {
+  try {
+    const { rating, quote } = req.body;
+    if (!quote || !quote.trim()) return res.status(400).json({ error: 'A review message is required' });
+    const testimonial = new Testimonial({
+      userId: req.user.id,
+      username: req.user.username,
+      rating: Math.min(5, Math.max(1, Number(rating) || 5)),
+      quote: quote.trim()
+    });
+    await testimonial.save();
+    res.status(201).json(testimonial);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit review' });
+  }
+});
+
+app.delete('/api/testimonials/:id', verifyToken, async (req, res) => {
+  try {
+    const testimonial = await Testimonial.findById(req.params.id);
+    if (!testimonial) return res.status(404).json({ error: 'Review not found' });
+    if (req.user.role !== 'admin' && testimonial.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to delete this review' });
+    }
+    await testimonial.deleteOne();
+    res.json({ message: 'Review deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete review' });
+  }
+});
+
+// Newsletter
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  try {
+    const email = (req.body.email || '').trim().toLowerCase();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address' });
+    }
+    const existing = await Subscriber.findOne({ email });
+    if (existing) {
+      return res.status(200).json({ message: "You're already subscribed!", alreadySubscribed: true });
+    }
+    await new Subscriber({ email }).save();
+    res.status(201).json({ message: 'Subscribed! Watch your inbox for seasonal notes.' });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(200).json({ message: "You're already subscribed!", alreadySubscribed: true });
+    }
+    res.status(500).json({ error: 'Failed to subscribe. Please try again.' });
   }
 });
 

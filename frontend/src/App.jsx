@@ -10,7 +10,7 @@ import MyOrders from './components/MyOrders';
 import AdminOrders from './components/AdminOrders';
 import AdminProducts from './components/AdminProducts';
 import GreetingCard from './components/GreetingCard';
-import { CheckIcon, FlowerIcon, SparkleIcon } from './components/Icons';
+import { FlowerIcon, SparkleIcon } from './components/Icons';
 
 const collections = [
   {
@@ -49,6 +49,14 @@ const process = [
   ['Delivered', 'Every piece is hand wrapped and prepared with care.']
 ];
 
+// Turns "jane_doe" or "Jane Doe" into initials like "JD" for the avatar badge
+function getInitials(name = '') {
+  const parts = name.trim().split(/[\s_]+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('zara_user');
@@ -64,12 +72,21 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [greetingCard, setGreetingCard] = useState(null);
+  const [testimonials, setTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState({ state: 'idle', message: '' });
 
   useEffect(() => {
     if (user) {
       setView(user.role === 'admin' ? 'admin-orders' : 'shop');
       loadProducts();
       loadOrders();
+      loadTestimonials();
     }
   }, [user]);
 
@@ -91,6 +108,48 @@ const loadProducts = async () => {
 };
   const loadOrders = async () => {
     try { setOrders(await api.getOrders()); } catch (err) { console.error(err); }
+  };
+
+  const loadTestimonials = async () => {
+    setTestimonialsLoading(true);
+    try {
+      setTestimonials(await api.getTestimonials());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTestimonialsLoading(false);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!reviewText.trim()) return;
+    setSubmittingReview(true);
+    setReviewMessage('');
+    try {
+      await api.addTestimonial({ rating: reviewRating, quote: reviewText.trim() });
+      setReviewText('');
+      setReviewRating(5);
+      setReviewMessage('Thanks for your review!');
+      loadTestimonials();
+    } catch (err) {
+      setReviewMessage(err.message || 'Could not submit your review.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterStatus({ state: 'loading', message: '' });
+    try {
+      const res = await api.subscribeNewsletter(newsletterEmail.trim());
+      setNewsletterStatus({ state: 'success', message: res.message || 'Subscribed!' });
+      setNewsletterEmail('');
+    } catch (err) {
+      setNewsletterStatus({ state: 'error', message: err.message || 'Something went wrong.' });
+    }
   };
 
   const handleLogout = () => {
@@ -188,7 +247,7 @@ const loadProducts = async () => {
               <span />
             </div>
             <div className="hero-content">
-              <div className="eyebrow">Handmade, for every occasion</div>
+              <div className="eyebrow"><SparkleIcon width={13} height={13} /> Handmade, for every occasion</div>
               <h1>
                 <span>Flowers & gifts,</span>
                 <br />
@@ -199,10 +258,12 @@ const loadProducts = async () => {
                 <button className="btn-primary magnetic-btn" onClick={() => goToProducts()}>Shop Collection <span aria-hidden="true">&rarr;</span></button>
                 <button className="btn-secondary magnetic-btn" onClick={() => setView('custom')}>Create Bouquet</button>
               </div>
-              <div className="hero-notes" aria-label="Store highlights">
-                <span>Fresh florals</span>
-                <span>Hand wrapped</span>
-                <span>Custom gifts</span>
+              <div className="hero-trust" aria-label="Store highlights">
+                <span className="hero-trust-rating"><span className="stars" aria-hidden="true">★★★★★</span> 4.9 rating</span>
+                <span className="trust-divider" aria-hidden="true" />
+                <span>1500+ happy customers</span>
+                <span className="trust-divider" aria-hidden="true" />
+                <span>100% handmade</span>
               </div>
             </div>
             <div className="hero-visual">
@@ -210,6 +271,15 @@ const loadProducts = async () => {
               <div className="hero-orbit orbit-two"><SparkleIcon width={20} height={20} /></div>
               <img src="/images/hero-bouquet.png" alt="Handmade flower bouquet" className="hero-image" />
             </div>
+          </section>
+
+          <section className="trust-bar section-wide" aria-label="Why customers choose Zara">
+            {stats.map(([value, label]) => (
+              <div className="trust-item" key={label}>
+                <strong>{value}</strong>
+                <span>{label}</span>
+              </div>
+            ))}
           </section>
 
           <section className="collections-section section-wide">
@@ -251,24 +321,15 @@ const loadProducts = async () => {
             </div>
           </section>
 
-          <section className="experience-section section-wide">
-            <div className="stats-grid">
-              {stats.map(([value, label]) => (
-                <div className="stat-card" key={label}>
-                  <strong>{value}</strong>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="process-panel">
-              <div>
-                <div className="eyebrow">How customization works</div>
-                <h2>A simple path from feeling to finished gift.</h2>
-              </div>
+          <section className="process-band section-wide">
+           
+            <div className="process-panel-new">
+              <div className="eyebrow">How customization works</div>
+              <h2>A simple path from feeling to finished gift.</h2>
               <div className="process-list">
-                {process.map(([title, copy]) => (
+                {process.map(([title, copy], i) => (
                   <div className="process-item" key={title}>
-                    <span><CheckIcon width={16} height={16} /></span>
+                    <span>{i + 1}</span>
                     <div>
                       <h3>{title}</h3>
                       <p>{copy}</p>
@@ -279,19 +340,93 @@ const loadProducts = async () => {
             </div>
           </section>
 
-          <section className="testimonial-section section-wide">
-            <div className="testimonial-card">
-              <div className="rating-row">5/5 <small>Verified purchase</small></div>
-              <blockquote>"The bouquet looked even softer and more beautiful in person. The wrapping, ribbon, and note felt so personal."</blockquote>
-              <span>Customer review</span>
-            </div>
-            <div className="newsletter-panel">
-              <div className="eyebrow">Zara notes</div>
-              <h2>Seasonal blooms, gift ideas, and custom inspiration.</h2>
-              <div className="newsletter-form">
-                <input type="email" placeholder="Email address" aria-label="Email address" />
-                <button className="btn-primary">Join</button>
+          <section className="testimonials-band section-wide">
+            <div className="section-heading">
+              <div>
+                <div className="eyebrow">Loved by customers</div>
+                <h2>Real words from real bouquets.</h2>
               </div>
+            </div>
+
+            {testimonialsLoading ? (
+              <div className="empty-state">Loading reviews...</div>
+            ) : testimonials.length > 0 ? (
+              <div className="testimonials-grid">
+                {testimonials.map((t) => (
+                  <article className="testimonial-tile" key={t._id}>
+                    <span className="quote-mark" aria-hidden="true">&ldquo;</span>
+                    <div className="stars" aria-hidden="true">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</div>
+                    <p>{t.quote}</p>
+                    <div className="testimonial-person">
+                      <span className="avatar-badge">{getInitials(t.username)}</span>
+                      <div>
+                        <strong>{t.username}</strong>
+                        <small>Verified purchase</small>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">No reviews yet — be the first to share one below.</div>
+            )}
+
+            <form className="review-form" onSubmit={handleSubmitReview}>
+              <div className="review-form-heading">Leave a review</div>
+              <div className="review-stars-input" role="radiogroup" aria-label="Rating">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    className={`star-btn ${n <= reviewRating ? 'active' : ''}`}
+                    aria-label={`${n} star${n > 1 ? 's' : ''}`}
+                    aria-pressed={n === reviewRating}
+                    onClick={() => setReviewRating(n)}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="review-textarea"
+                placeholder="Share how your order went..."
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                maxLength={500}
+                rows={3}
+                required
+              />
+              <div className="review-form-footer">
+                {reviewMessage && <span className="review-form-message">{reviewMessage}</span>}
+                <button className="btn-primary" type="submit" disabled={submittingReview || !reviewText.trim()}>
+                  {submittingReview ? 'Submitting...' : 'Submit review'}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="newsletter-band section-wide">
+            <div className="newsletter-inner">
+              <div>
+                <div className="eyebrow">Zara notes</div>
+                <h2>Seasonal blooms, gift ideas, and custom inspiration.</h2>
+              </div>
+              <form className="newsletter-form" onSubmit={handleNewsletterSubmit}>
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  aria-label="Email address"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  required
+                />
+                <button className="btn-primary" type="submit" disabled={newsletterStatus.state === 'loading'}>
+                  {newsletterStatus.state === 'loading' ? '...' : 'Join'}
+                </button>
+              </form>
+              {newsletterStatus.message && (
+                <span className={`newsletter-status ${newsletterStatus.state}`}>{newsletterStatus.message}</span>
+              )}
             </div>
           </section>
         </>

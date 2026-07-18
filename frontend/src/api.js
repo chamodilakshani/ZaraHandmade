@@ -35,5 +35,9 @@ export const api = {
   deleteProduct: (id) => request(`/api/products/${id}`, { method: 'DELETE' }),
   getOrders: () => request('/api/orders'),
   placeOrder: (order) => request('/api/orders', { method: 'POST', body: JSON.stringify(order) }),
-  completeOrder: (id) => request(`/api/orders/${id}/complete`, { method: 'PATCH' })
+  completeOrder: (id) => request(`/api/orders/${id}/complete`, { method: 'PATCH' }),
+  getTestimonials: () => request('/api/testimonials'),
+  addTestimonial: (testimonial) => request('/api/testimonials', { method: 'POST', body: JSON.stringify(testimonial) }),
+  deleteTestimonial: (id) => request(`/api/testimonials/${id}`, { method: 'DELETE' }),
+  subscribeNewsletter: (email) => request('/api/newsletter/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
 };
