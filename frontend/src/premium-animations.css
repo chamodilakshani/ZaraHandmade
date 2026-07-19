@@ -1,0 +1,272 @@
+/* ============================================================
+   ZARA HANDMADE — PREMIUM MOTION LAYER
+   Purely additive: scroll-reveal, image fade-in, smooth scroll,
+   and refined micro-interactions. No color/logic changes.
+   Import this file AFTER your existing CSS, e.g.:
+     import './App.css';
+     import './premium-animations.css';
+   ============================================================ */
+
+/* ---------- Smooth scrolling everywhere ---------- */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Scroll-reveal system ----------
+   Add data-reveal to any section/element. Optionally set
+   style={{ '--i': index }} on children inside a grid/list for
+   an automatic stagger. Handled by the useScrollReveal hook
+   in App.jsx, which toggles the .in-view class via IntersectionObserver. */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal].in-view {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+[data-reveal="fade"] {
+  transform: translateY(0) scale(1);
+}
+[data-reveal="fade"]:not(.in-view) {
+  opacity: 0;
+}
+
+[data-reveal="left"]:not(.in-view) {
+  transform: translateX(-32px);
+}
+[data-reveal="left"].in-view {
+  transform: translateX(0);
+}
+
+[data-reveal="right"]:not(.in-view) {
+  transform: translateX(32px);
+}
+[data-reveal="right"].in-view {
+  transform: translateX(0);
+}
+
+[data-reveal="scale"]:not(.in-view) {
+  transform: scale(0.92);
+}
+
+/* ---------- Hero entrance (runs on load, not scroll) ---------- */
+@keyframes heroRise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.premium-hero .eyebrow,
+.premium-hero h1,
+.premium-hero p,
+.premium-hero .hero-actions,
+.premium-hero .hero-trust {
+  animation: heroRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.premium-hero .eyebrow { animation-delay: 0.05s; }
+.premium-hero h1 { animation-delay: 0.15s; }
+.premium-hero p { animation-delay: 0.28s; }
+.premium-hero .hero-actions { animation-delay: 0.4s; }
+.premium-hero .hero-trust { animation-delay: 0.52s; }
+
+.premium-hero .hero-visual {
+  animation: heroRise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.3s;
+}
+
+/* gentle floating ambience for the orbit icons + background blobs */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(4deg); }
+}
+.hero-orbit {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+.hero-orbit.orbit-two {
+  animation-duration: 7.5s;
+  animation-delay: 0.6s;
+}
+
+@keyframes driftAmbient {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(18px, -22px) scale(1.06); }
+}
+.ambient {
+  animation: driftAmbient 12s ease-in-out infinite;
+}
+.ambient-two {
+  animation-duration: 15s;
+  animation-delay: 1.2s;
+}
+
+@keyframes petalDrift {
+  0% { transform: translateY(-10%) translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(110vh) translateX(24px) rotate(180deg); opacity: 0; }
+}
+.petal-field span {
+  animation: petalDrift 14s linear infinite;
+}
+.petal-field span:nth-child(1) { animation-delay: 0s; }
+.petal-field span:nth-child(2) { animation-delay: 2.3s; }
+.petal-field span:nth-child(3) { animation-delay: 4.6s; }
+.petal-field span:nth-child(4) { animation-delay: 6.9s; }
+.petal-field span:nth-child(5) { animation-delay: 9.2s; }
+
+/* ---------- Smooth, blur-up image loading ---------- */
+.img-fade-wrap {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(100deg, rgba(0,0,0,0.045) 8%, rgba(0,0,0,0.09) 18%, rgba(0,0,0,0.045) 33%);
+  background-size: 200% 100%;
+}
+
+.img-fade-wrap.is-loading {
+  animation: shimmerSweep 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmerSweep {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.img-fade {
+  opacity: 0;
+  transform: scale(1.04);
+  filter: blur(8px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.7s ease-out;
+}
+
+.img-fade.is-loaded {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+
+/* ---------- Refined hover / interaction polish ---------- */
+.collection-card {
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.collection-card:hover {
+  transform: translateY(-6px);
+}
+.collection-card .collection-image {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.collection-card:hover .collection-image {
+  transform: scale(1.06);
+}
+
+.explore-link {
+  position: relative;
+  transition: gap 0.3s ease, color 0.3s ease;
+}
+.explore-link span {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.explore-link:hover span {
+  transform: translateX(5px);
+}
+
+.magnetic-btn {
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background-position 0.6s ease;
+}
+.magnetic-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.28);
+}
+.magnetic-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.testimonial-tile {
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.testimonial-tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 34px -18px rgba(0, 0, 0, 0.25);
+}
+
+.process-item span {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.process-item:hover span {
+  transform: scale(1.12) rotate(-4deg);
+}
+
+.filter-chip {
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    transform 0.25s ease;
+}
+.filter-chip:active {
+  transform: scale(0.95);
+}
+
+.star-btn {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+.star-btn:hover {
+  transform: scale(1.2);
+}
+
+/* section fade edges for a more premium band transition */
+.section-wide {
+  scroll-margin-top: 84px;
+}
+
+/* ---------- Shop / product grid stagger ---------- */
+.shop-grid > * {
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* ---------- Newsletter status micro-motion ---------- */
+@keyframes statusPop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.newsletter-status {
+  display: inline-block;
+  animation: statusPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

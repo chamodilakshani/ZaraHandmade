@@ -12,6 +12,7 @@ import AdminProducts from './components/AdminProducts';
 import AdminGreetingTemplates from './components/AdminGreetingTemplates';
 import GreetingCard from './components/GreetingCard';
 import { FlowerIcon, SparkleIcon } from './components/Icons';
+import './premium-animations.css';
 
 const collections = [
   {
@@ -58,6 +59,56 @@ function getInitials(name = '') {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+// Smooth blur-up image: shows a shimmer placeholder until the image
+// has actually decoded, then cross-fades it in. Pure presentation —
+// takes the same props you'd give a normal <img>.
+function FadeImage({ src, alt = '', className = '', wrapClassName = '', ...rest }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <span className={`img-fade-wrap ${loaded ? '' : 'is-loading'} ${wrapClassName}`}>
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className={`img-fade ${loaded ? 'is-loaded' : ''} ${className}`}
+        onLoad={() => setLoaded(true)}
+        {...rest}
+      />
+    </span>
+  );
+}
+
+// Observes every [data-reveal] element currently in the DOM and adds
+// .in-view the first time it scrolls into the viewport. Re-runs when
+// `watch` changes so newly-rendered sections (view switches, data
+// finishing a fetch) get picked up too.
+function useScrollReveal(watch) {
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-reveal]:not(.in-view)');
+    if (!els.length) return;
+
+    if (!('IntersectionObserver' in window)) {
+      els.forEach((el) => el.classList.add('in-view'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
+    );
+
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [watch]);
+}
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('zara_user');
@@ -81,6 +132,10 @@ export default function App() {
   const [reviewMessage, setReviewMessage] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState({ state: 'idle', message: '' });
+
+  // Re-scan for newly-mounted sections whenever the view changes or
+  // async data (products/testimonials) finishes loading in.
+  useScrollReveal(`${view}-${products.length}-${testimonials.length}-${productsLoading}-${testimonialsLoading}`);
 
   useEffect(() => {
     if (user) {
@@ -270,13 +325,13 @@ const loadProducts = async () => {
             <div className="hero-visual">
               <div className="hero-orbit orbit-one"><FlowerIcon width={22} height={22} /></div>
               <div className="hero-orbit orbit-two"><SparkleIcon width={20} height={20} /></div>
-              <img src="/images/hero-bouquet.png" alt="Handmade flower bouquet" className="hero-image" />
+              <FadeImage src="/images/hero-bouquet.png" alt="Handmade flower bouquet" wrapClassName="hero-image-wrap" className="hero-image" />
             </div>
           </section>
 
-          <section className="trust-bar section-wide" aria-label="Why customers choose Zara">
-            {stats.map(([value, label]) => (
-              <div className="trust-item" key={label}>
+          <section className="trust-bar section-wide" aria-label="Why customers choose Zara" data-reveal="fade">
+            {stats.map(([value, label], i) => (
+              <div className="trust-item" key={label} style={{ '--i': i }}>
                 <strong>{value}</strong>
                 <span>{label}</span>
               </div>
@@ -284,7 +339,7 @@ const loadProducts = async () => {
           </section>
 
           <section className="collections-section section-wide">
-            <div className="section-heading">
+            <div className="section-heading" data-reveal="left">
               <div>
                 <div className="eyebrow">Featured collections</div>
                 <h2>Signature gifts for every kind of love.</h2>
@@ -292,9 +347,9 @@ const loadProducts = async () => {
               <button className="text-link" onClick={() => setView('custom')}>Customize yours</button>
             </div>
             <div className="collection-grid">
-              {collections.map((item) => (
-                <article className={`collection-card ${item.tone}`} key={item.title}>
-                  <img src={item.image} alt="" className="collection-image" loading="lazy" />
+              {collections.map((item, i) => (
+                <article className={`collection-card ${item.tone}`} key={item.title} data-reveal style={{ '--i': i }}>
+                  <FadeImage src={item.image} alt="" wrapClassName="collection-image-wrap" className="collection-image" />
                   <div className="collection-content">
                     <h3>{item.title}</h3>
                     <p>{item.copy}</p>
@@ -308,7 +363,7 @@ const loadProducts = async () => {
           </section>
 
           <section className="shop-section section-wide" id="shop-products" aria-labelledby="shop-title">
-            <div className="section-heading">
+            <div className="section-heading" data-reveal="left">
               <div>
                 <div className="eyebrow">Trending now</div>
                 <h2 id="shop-title">Handmade favorites, ready to gift.</h2>
@@ -316,24 +371,22 @@ const loadProducts = async () => {
               <button className="section-pill section-pill-btn" onClick={() => goToProducts()}>View all products</button>
             </div>
             <div className="shop-grid">
-              {products.slice(0, 6).map((p) => (
-                <ProductCard key={p._id} product={p} onClick={() => setSelectedProduct(p)} />
+              {products.slice(0, 6).map((p, i) => (
+                <div key={p._id} data-reveal style={{ '--i': i }}>
+                  <ProductCard product={p} onClick={() => setSelectedProduct(p)} />
+                </div>
               ))}
             </div>
           </section>
 
           <section className="process-band section-wide">
-            <div className="process-visual" aria-hidden="true">
-              <div className="process-visual-blob" />
-              <div className="process-visual-ring" />
-              <div className="process-visual-icon"><FlowerIcon width={30} height={30} /></div>
-            </div>
-            <div className="process-panel-new">
+            
+            <div className="process-panel-new" data-reveal>
               <div className="eyebrow">How customization works</div>
               <h2>A simple path from feeling to finished gift.</h2>
               <div className="process-list">
                 {process.map(([title, copy], i) => (
-                  <div className="process-item" key={title}>
+                  <div className="process-item" key={title} data-reveal style={{ '--i': i }}>
                     <span>{i + 1}</span>
                     <div>
                       <h3>{title}</h3>
@@ -346,7 +399,7 @@ const loadProducts = async () => {
           </section>
 
           <section className="testimonials-band section-wide">
-            <div className="section-heading">
+            <div className="section-heading" data-reveal="left">
               <div>
                 <div className="eyebrow">Loved by customers</div>
                 <h2>Real words from real bouquets.</h2>
@@ -357,8 +410,8 @@ const loadProducts = async () => {
               <div className="empty-state">Loading reviews...</div>
             ) : testimonials.length > 0 ? (
               <div className="testimonials-grid">
-                {testimonials.map((t) => (
-                  <article className="testimonial-tile" key={t._id}>
+                {testimonials.map((t, i) => (
+                  <article className="testimonial-tile" key={t._id} data-reveal style={{ '--i': i }}>
                     <span className="quote-mark" aria-hidden="true">&ldquo;</span>
                     <div className="stars" aria-hidden="true">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</div>
                     <p>{t.quote}</p>
@@ -376,7 +429,7 @@ const loadProducts = async () => {
               <div className="empty-state">No reviews yet — be the first to share one below.</div>
             )}
 
-            <form className="review-form" onSubmit={handleSubmitReview}>
+            <form className="review-form" onSubmit={handleSubmitReview} data-reveal="fade">
               <div className="review-form-heading">Leave a review</div>
               <div className="review-stars-input" role="radiogroup" aria-label="Rating">
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -410,7 +463,7 @@ const loadProducts = async () => {
             </form>
           </section>
 
-          <section className="newsletter-band section-wide">
+          <section className="newsletter-band section-wide" data-reveal="scale">
             <div className="newsletter-inner">
               <div>
                 <div className="eyebrow">Zara notes</div>
@@ -439,7 +492,7 @@ const loadProducts = async () => {
 
       {view === 'products' && user.role === 'customer' && (
         <section className="products-page section-wide">
-          <div className="products-hero">
+          <div className="products-hero" data-reveal="left">
             <div>
               <div className="eyebrow">Products</div>
               <h1>Browse handmade gifts and fresh floral pieces.</h1>
@@ -447,7 +500,7 @@ const loadProducts = async () => {
             </div>
           </div>
 
-          <div className="filter-panel" aria-label="Product filters">
+          <div className="filter-panel" aria-label="Product filters" data-reveal="fade">
             <div className="filter-group">
               <span>Category</span>
               {['', 'Flower Bouquet', 'Gift Box'].map((category) => (
@@ -483,8 +536,10 @@ const loadProducts = async () => {
             <div className="empty-state">Loading products...</div>
           ) : products.length > 0 ? (
             <div className="shop-grid products-grid">
-              {products.map((p) => (
-                <ProductCard key={p._id} product={p} onClick={() => setSelectedProduct(p)} />
+              {products.map((p, i) => (
+                <div key={p._id} data-reveal style={{ '--i': i % 6 }}>
+                  <ProductCard product={p} onClick={() => setSelectedProduct(p)} />
+                </div>
               ))}
             </div>
           ) : (
