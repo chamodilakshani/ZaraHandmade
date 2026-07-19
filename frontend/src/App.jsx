@@ -9,6 +9,7 @@ import CustomBouquet from './components/CustomBouquet';
 import MyOrders from './components/MyOrders';
 import AdminOrders from './components/AdminOrders';
 import AdminProducts from './components/AdminProducts';
+import AdminGreetingTemplates from './components/AdminGreetingTemplates';
 import GreetingCard from './components/GreetingCard';
 import { FlowerIcon, SparkleIcon } from './components/Icons';
 
@@ -322,7 +323,11 @@ const loadProducts = async () => {
           </section>
 
           <section className="process-band section-wide">
-           
+            <div className="process-visual" aria-hidden="true">
+              <div className="process-visual-blob" />
+              <div className="process-visual-ring" />
+              <div className="process-visual-icon"><FlowerIcon width={30} height={30} /></div>
+            </div>
             <div className="process-panel-new">
               <div className="eyebrow">How customization works</div>
               <h2>A simple path from feeling to finished gift.</h2>
@@ -509,6 +514,10 @@ const loadProducts = async () => {
 
       {view === 'admin-products' && user.role === 'admin' && (
         <AdminProducts products={products} refresh={loadProducts} />
+      )}
+
+      {view === 'admin-templates' && user.role === 'admin' && (
+        <AdminGreetingTemplates />
       )}
 
       <ProductModal

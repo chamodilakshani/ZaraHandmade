@@ -48,6 +48,7 @@ export default function Navbar({ user, view, setView, cartCount, onCartClick, on
         <>
           <NavBtn target="admin-orders" label="Orders" />
           <NavBtn target="admin-products" label="Products" />
+          <NavBtn target="admin-templates" label="Greeting Templates" />
         </>
       )}
       {user.role === 'customer' && (

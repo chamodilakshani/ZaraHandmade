@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const MONGO_URI = process.env.MONGO_URI;
@@ -101,6 +101,15 @@ const SubscriberSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, trim: true, lowercase: true }
 }, { timestamps: true });
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
+
+// Greeting card templates — admin-uploaded backgrounds customers pick from
+const GreetingTemplateSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  occasion: { type: String, default: '', trim: true },
+  image: { type: String, required: true },
+  textColor: { type: String, default: '#3c322c' }
+}, { timestamps: true });
+const GreetingTemplate = mongoose.model('GreetingTemplate', GreetingTemplateSchema);
 
 // ---- AUTH MIDDLEWARE ----
 function verifyToken(req, res, next) {
@@ -295,6 +304,42 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
       return res.status(200).json({ message: "You're already subscribed!", alreadySubscribed: true });
     }
     res.status(500).json({ error: 'Failed to subscribe. Please try again.' });
+  }
+});
+
+// Greeting card templates
+app.get('/api/greeting-templates', async (req, res) => {
+  try {
+    const templates = await GreetingTemplate.find().sort({ createdAt: -1 });
+    res.json(templates);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch templates' });
+  }
+});
+
+app.post('/api/greeting-templates', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { name, occasion, image, textColor } = req.body;
+    if (!name || !image) return res.status(400).json({ error: 'Name and image are required' });
+    const template = new GreetingTemplate({
+      name,
+      occasion: occasion || '',
+      image,
+      textColor: textColor || '#3c322c'
+    });
+    await template.save();
+    res.status(201).json(template);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add template' });
+  }
+});
+
+app.delete('/api/greeting-templates/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    await GreetingTemplate.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Template deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete template' });
   }
 });
 

@@ -39,5 +39,8 @@ export const api = {
   getTestimonials: () => request('/api/testimonials'),
   addTestimonial: (testimonial) => request('/api/testimonials', { method: 'POST', body: JSON.stringify(testimonial) }),
   deleteTestimonial: (id) => request(`/api/testimonials/${id}`, { method: 'DELETE' }),
-  subscribeNewsletter: (email) => request('/api/newsletter/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
+  subscribeNewsletter: (email) => request('/api/newsletter/subscribe', { method: 'POST', body: JSON.stringify({ email }) }),
+  getGreetingTemplates: () => request('/api/greeting-templates'),
+  addGreetingTemplate: (template) => request('/api/greeting-templates', { method: 'POST', body: JSON.stringify(template) }),
+  deleteGreetingTemplate: (id) => request(`/api/greeting-templates/${id}`, { method: 'DELETE' })
 };
